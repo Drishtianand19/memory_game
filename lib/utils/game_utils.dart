@@ -15,6 +15,11 @@ class Game {
     Colors.blue
   ];
   final String hiddenCardpath = "assets/images/hidden.png";
+  List<String> lives_lines = [
+    "assets/images/heartlives.jpg", //o
+    "assets/images/heartlives.jpg", //1
+    "assets/images/heartlives.jpg", //2
+  ];
   List<String> cards_list = [
     "assets/images/circle.png",
     "assets/images/triangle.png",

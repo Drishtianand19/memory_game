@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   //setting text style
   TextStyle whiteText = TextStyle(color: Colors.white);
   bool hideTest = false;
+  int i = 0; // keeping track of live lines
   Game _game = Game();
 
   //game stats
@@ -50,6 +52,15 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       score = 0;
       tries = 0;
+      _game.initGame();
+    });
+  }
+
+  void gamewon() {
+    setState(() {
+      if (score == 800) {
+        _showdialog();
+      }
     });
   }
 
@@ -71,6 +82,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           actions: <Widget>[
             ElevatedButton(
+              style: ButtonStyle(
+                  backgroundColor:
+                      MaterialStateProperty.all(Colors.pinkAccent)),
               child: const Text('PLAY AGAIN'),
               onPressed: () => reset(), //dismisses the alert box
             ),
@@ -101,6 +115,24 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(
             height: 24.0,
           ),
+          //GridView.builder(gridDelegate: gridDelegate, itemBuilder: itemBuilder)
+          Container(
+            alignment: Alignment.topRight,
+            child: SizedBox(
+              height: 50.0,
+              width: 50.0,
+              child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                  ),
+                  itemCount: _game.lives_lines.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return Container(
+                      child: Image.asset(_game.lives_lines[index]),
+                    );
+                  }),
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -120,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisSpacing: 16.0,
                     mainAxisSpacing: 16.0,
                   ),
-                  padding: EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(18.0),
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () {
@@ -128,28 +160,33 @@ class _HomeScreenState extends State<HomeScreen> {
                         print(_game.matchCheck);
                         setState(() {
                           //incrementing the clicks
-                          tries++;
-                          _game.gameImg![index] = _game.cards_list[index];
-                          _game.matchCheck
-                              .add({index: _game.cards_list[index]});
-                          print(_game.matchCheck.first);
-                        });
-                        Timer.periodic(const Duration(milliseconds: 60),
-                            (timer) {
-                          if (score == 800) {
-                            _showdialog();
+                          if (_game.lives_lines.isNotEmpty) {
+                            tries++;
+                            _game.gameImg![index] = _game.cards_list[index];
+                            _game.matchCheck
+                                .add({index: _game.cards_list[index]});
+                            print(_game.matchCheck.first);
                           }
                         });
+                        // Timer.periodic(const Duration(milliseconds: 60),
+                        //     (timer) {
+                        //   if (score == 800) {
+                        //     _showdialog();
+                        //   }
+                        // });
                         if (_game.matchCheck.length == 2) {
                           if (_game.matchCheck[0].values.first ==
                               _game.matchCheck[1].values.first) {
                             print("true");
                             //incrementing the score
                             score += 100;
+                            gamewon();
                             _game.matchCheck.clear();
-                          } else {
+                          } else if (_game.lives_lines.isNotEmpty) {
+                            // wrong cards flipped
                             print("false");
-
+                            _game.lives_lines.remove(index);
+                            index--;
                             Future.delayed(Duration(milliseconds: 500), () {
                               print(_game.gameColors);
                               setState(() {
@@ -160,6 +197,40 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _game.matchCheck.clear();
                               });
                             });
+                          } else {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) {
+                                return AlertDialog(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18)),
+                                  title: Text("YOU LOST",
+                                      selectionColor: Colors.blue[900],
+                                      maxLines: 35),
+                                  actionsPadding:
+                                      EdgeInsets.only(right: 8, bottom: 8),
+                                  content: Container(
+                                    //height: 10.0,
+                                    child: Lottie.asset(
+                                        "assets/images/gameover.json",
+                                        fit: BoxFit.cover),
+                                  ),
+                                  actions: <Widget>[
+                                    ElevatedButton(
+                                      style: ButtonStyle(
+                                          backgroundColor:
+                                              MaterialStateProperty.all(
+                                                  Colors.pinkAccent)),
+                                      child: const Text('PLAY AGAIN'),
+                                      onPressed: () =>
+                                          reset(), //dismisses the alert box
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
                           }
                         }
                       },
